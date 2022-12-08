@@ -3,11 +3,13 @@ export type Product = {
   title: string,
   description: string,
   price: number,
+  image: string
 };
 
 
 export type CartItem = {
-  product: Product,
+  product_id: string,
+  cart_id: string,
   count: number,
 }
 
