@@ -68,8 +68,6 @@ export class CartService {
 
   async updateByUserId(userId: string, { product_id, cart_id, count }: CartItem): Promise<Cart> {
 
-    const { id } = await this.findOrCreateByUserId(userId);
-
     const existingProduct = await this.pg.query(`SELECT * FROM cart_items WHERE cart_id=$1 AND product_id=$2`, [cart_id, product_id]);
 
     if(count < 1 && existingProduct.rows?.[0]) {
