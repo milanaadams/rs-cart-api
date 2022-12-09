@@ -1,39 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { v4 } from 'uuid';
 
-import { Order } from '../models';
+import { Order, IncomingOrder } from '../models';
+
+import { InjectClient } from 'nest-postgres';
+import { Client } from 'pg';
 
 @Injectable()
 export class OrderService {
+  constructor(@InjectClient() private readonly pg: Client) {};
   private orders: Record<string, Order> = {}
 
-  findById(orderId: string): Order {
-    return this.orders[ orderId ];
+  async findByUserId(userId: string): Promise<Order[]> {
+    const orders = await this.pg.query(`SELECT * FROM orders WHERE user_id=$1`, [userId]);
+    return orders.rows;
   }
 
-  create(data: any) {
-    const id = v4(v4())
-    const order = {
-      ...data,
-      id,
-      status: 'inProgress',
-    };
+  async create(data: IncomingOrder): Promise<Order> {
+    console.log('Create order data: ', data);
+    const {userId, cartId, payment, delivery, comments, total} = data;
 
-    this.orders[ id ] = order;
+    const newOrder = await this.pg.query(`INSERT INTO orders
+      (user_id, cartId, payment, delivery, comments, status, total) VALUES 
+      ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [userId, cartId, payment, delivery, comments, 'in progress', total]);
 
-    return order;
-  }
+    console.log('New order: ', newOrder);
 
-  update(orderId, data) {
-    const order = this.findById(orderId);
-
-    if (!order) {
-      throw new Error('Order does not exist.');
-    }
-
-    this.orders[ orderId ] = {
-      ...data,
-      id: orderId,
-    }
+    return newOrder.rows[0];
   }
 }
